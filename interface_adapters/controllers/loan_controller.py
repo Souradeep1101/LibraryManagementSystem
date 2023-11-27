@@ -3,7 +3,8 @@ class LoanController:
     Controller for handling loan-related requests.
     """
 
-    def __init__(self, borrow_book_use_case, return_book_use_case):
+    def __init__(self, borrow_book_use_case, return_book_use_case, delete_loan_use_case):
+        self.delete_loan_use_case = delete_loan_use_case
         self.borrow_book_use_case = borrow_book_use_case
         self.return_book_use_case = return_book_use_case
 
@@ -18,5 +19,17 @@ class LoanController:
         try:
             self.return_book_use_case.execute(loan_id, return_date)
             return "Book returned successfully."
+        except Exception as e:
+            return str(e)
+
+    def delete_loan(self, loan_id):
+        """
+        Deletes a loan record from the library system.
+
+        Parameters:
+            loan_id (int): The unique identifier of the loan to be deleted.
+        """
+        try:
+            return self.delete_loan_use_case.execute(loan_id)
         except Exception as e:
             return str(e)

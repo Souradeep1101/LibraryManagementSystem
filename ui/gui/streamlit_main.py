@@ -1,5 +1,5 @@
-# Importing necessary modules for database connection and controllers
 import streamlit as st
+# Importing database connection and controllers for handling business logic
 from frameworks_and_drivers.database.database_connector import create_db_connection
 from interface_adapters.controllers.book_controller import BookController
 from interface_adapters.controllers.user_controller import UserController
@@ -7,12 +7,16 @@ from interface_adapters.controllers.loan_controller import LoanController
 from interface_adapters.repositories.book_repository import BookRepository
 from interface_adapters.repositories.user_repository import UserRepository
 from interface_adapters.repositories.loan_repository import LoanRepository
+# Importing use cases which contain the application's business rules
 from use_cases.add_new_book_use_case import AddNewBookUseCase
 from use_cases.update_book_info_use_case import UpdateBookInfoUseCase
 from use_cases.user_registration_use_case import UserRegistrationUseCase
 from use_cases.update_user_info_use_case import UpdateUserInfoUseCase
 from use_cases.borrow_book_use_case import BorrowBookUseCase
 from use_cases.return_book_use_case import ReturnBookUseCase
+from use_cases.delete_user_use_case import DeleteUserUseCase
+from use_cases.delete_book_use_case import DeleteBookUseCase
+from use_cases.delete_loan_use_case import DeleteLoanUseCase
 
 # Establishing a connection to the database
 db_connection = create_db_connection()
@@ -29,11 +33,14 @@ user_registration_use_case = UserRegistrationUseCase(user_repository)
 update_user_info_use_case = UpdateUserInfoUseCase(user_repository)
 borrow_book_use_case = BorrowBookUseCase(book_repository, loan_repository)
 return_book_use_case = ReturnBookUseCase(loan_repository)
+delete_book_use_case = DeleteBookUseCase(book_repository)
+delete_user_use_case = DeleteUserUseCase(user_repository)
+delete_loan_use_case = DeleteLoanUseCase(loan_repository)
 
 # Initializing controllers with the respective use cases
-book_controller = BookController(add_book_use_case, update_book_info_use_case)
-user_controller = UserController(user_registration_use_case, update_user_info_use_case)
-loan_controller = LoanController(borrow_book_use_case, return_book_use_case)
+book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case)
+user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case)
+loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case)
 
 
 def fetch_data(query):
@@ -133,6 +140,45 @@ def return_book_form():
             st.success(result)
 
 
+def delete_user_form():
+    """
+    Create a form in Streamlit to delete a user.
+    """
+    with st.form("Delete User"):
+        user_id = st.number_input("User ID to delete", min_value=1, step=1)
+        submit_button = st.form_submit_button("Delete User")
+
+        if submit_button:
+            result = user_controller.delete_user(user_id)
+            st.success(result)
+
+
+def delete_loan_form():
+    """
+    Create a form in Streamlit to delete a loan.
+    """
+    with st.form("Delete Loan"):
+        loan_id = st.number_input("Loan ID to delete", min_value=1, step=1)
+        submit_button = st.form_submit_button("Delete Loan")
+
+        if submit_button:
+            result = loan_controller.delete_loan(loan_id)
+            st.success(result)
+
+
+def delete_book_form():
+    """
+    Create a form in Streamlit to delete a book.
+    """
+    with st.form("Delete Book"):
+        book_id = st.number_input("Book ID to delete", min_value=1, step=1)
+        submit_button = st.form_submit_button("Delete Book")
+
+        if submit_button:
+            result = book_controller.delete_book(book_id)
+            st.success(result)
+
+
 def main():
     """
         Main function to run the Streamlit application.
@@ -140,7 +186,8 @@ def main():
     """
     st.title("Library Management System")
 
-    menu = ["Home", "Add Book", "Update Book Info", "Register User", "Borrow Book", "Return Book", "Exit"]
+    menu = ["Home", "Add Book", "Update Book Info", "Register User", "Borrow Book", "Return Book", "Delete User",
+            "Delete Loan", "Delete Book", "Exit"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Home":
@@ -165,6 +212,12 @@ def main():
         borrow_book_form()
     elif choice == "Return Book":
         return_book_form()
+    elif choice == "Delete User":
+        delete_user_form()
+    elif choice == "Delete Loan":
+        delete_loan_form()
+    elif choice == "Delete Book":
+        delete_book_form()
     elif choice == "Exit":
         st.write("Exiting the application.")
         st.stop()

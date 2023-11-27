@@ -15,6 +15,9 @@ from use_cases.user_registration_use_case import UserRegistrationUseCase
 from use_cases.update_user_info_use_case import UpdateUserInfoUseCase
 from use_cases.borrow_book_use_case import BorrowBookUseCase
 from use_cases.return_book_use_case import ReturnBookUseCase
+from use_cases.delete_user_use_case import DeleteUserUseCase
+from use_cases.delete_book_use_case import DeleteBookUseCase
+from use_cases.delete_loan_use_case import DeleteLoanUseCase
 
 # Establishing a connection to the database
 db_connection = create_db_connection()
@@ -31,11 +34,14 @@ user_registration_use_case = UserRegistrationUseCase(user_repository)
 update_user_info_use_case = UpdateUserInfoUseCase(user_repository)
 borrow_book_use_case = BorrowBookUseCase(book_repository, loan_repository)
 return_book_use_case = ReturnBookUseCase(loan_repository)
+delete_book_use_case = DeleteBookUseCase(book_repository)
+delete_user_use_case = DeleteUserUseCase(user_repository)
+delete_loan_use_case = DeleteLoanUseCase(loan_repository)
 
 # Initializing controllers with the respective use cases
-book_controller = BookController(add_book_use_case, update_book_info_use_case)
-user_controller = UserController(user_registration_use_case, update_user_info_use_case)
-loan_controller = LoanController(borrow_book_use_case, return_book_use_case)
+book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case)
+user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case)
+loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case)
 
 
 def fetch_data(query):
@@ -104,6 +110,30 @@ def return_book():
     print(loan_controller.return_book(loan_id, return_date))
 
 
+def delete_user():
+    """
+    Prompt the user for the user ID and delete the specified user.
+    """
+    user_id = int(input("Enter user ID to delete: "))
+    print(user_controller.delete_user(user_id))
+
+
+def delete_loan():
+    """
+    Prompt the user for the loan ID and delete the specified loan.
+    """
+    loan_id = int(input("Enter loan ID to delete: "))
+    print(loan_controller.delete_loan(loan_id))
+
+
+def delete_book():
+    """
+    Prompt the user for the book ID and delete the specified book.
+    """
+    book_id = int(input("Enter book ID to delete: "))
+    print(book_controller.delete_book(book_id))
+
+
 def main():
     """The main loop of the CLI, presenting the user with different actions to choose from."""
 
@@ -115,6 +145,9 @@ def main():
         print("4. Borrow Book")
         print("5. Return Book")
         print("6. View Database Tables")
+        print("7. Delete User")
+        print("8. Delete Loan")
+        print("9. Delete Book")
         print("0. Exit")
         choice = input("Enter choice: ")
 
@@ -134,6 +167,12 @@ def main():
                 # Viewing database tables
                 for table in ["books", "users", "loans"]:
                     fetch_and_display_table_data(table)
+            elif choice == "7":
+                delete_user()
+            elif choice == "8":
+                delete_loan()
+            elif choice == "9":
+                delete_book()
             elif choice == "0":
                 # Exiting the system
                 print("Exiting the system.")
