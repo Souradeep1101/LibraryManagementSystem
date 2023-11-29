@@ -33,8 +33,8 @@ user_registration_use_case = UserRegistrationUseCase(user_repository)
 update_user_info_use_case = UpdateUserInfoUseCase(user_repository)
 borrow_book_use_case = BorrowBookUseCase(book_repository, loan_repository)
 return_book_use_case = ReturnBookUseCase(loan_repository)
-delete_book_use_case = DeleteBookUseCase(book_repository)
-delete_user_use_case = DeleteUserUseCase(user_repository)
+delete_book_use_case = DeleteBookUseCase(book_repository, loan_repository)
+delete_user_use_case = DeleteUserUseCase(user_repository, loan_repository)
 delete_loan_use_case = DeleteLoanUseCase(loan_repository)
 
 # Initializing controllers with the respective use cases

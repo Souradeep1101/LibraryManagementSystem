@@ -40,23 +40,28 @@ class LoanRepository:
             print(f"Error: '{e}'")
             self.connection.rollback()
 
-    def get_loan_by_id(self, loan_id):
+    def get_loans_by_id(self, id_field_name, id_value, fetchone=True):
         """
         Retrieves a loan record from the database by its ID.
 
         Parameters:
-            loan_id (int): The unique identifier of the loan.
+            id_field_name (str): The column/field name of the id.
+            id_value (int): The unique identifier of the column/field.
+            fetchone (bool): Check if the user needs only one loan.
 
         Returns:
             A loan record from the database.
         """
-        query = "SELECT * FROM loans WHERE loan_id = %s"
-        args = (loan_id,)
+        query = f"SELECT * FROM loans WHERE {id_field_name} = %s"
+        args = (id_value,)
 
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, args)
-            loan = cursor.fetchone()
+            if fetchone:
+                loan = cursor.fetchone()
+            else:
+                loan = cursor.fetchall()
             return loan
         except Error as e:
             print(f"Error: '{e}'")

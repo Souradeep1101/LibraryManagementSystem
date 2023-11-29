@@ -21,7 +21,7 @@ class ReturnBookUseCase:
             return_date (datetime): The date when the book is returned.
         """
         try:
-            loan = self.loan_repository.get_loan_by_id(loan_id)
+            loan = self.loan_repository.get_loans_by_id('loan_id', loan_id)
             if not loan:
                 raise Exception("Loan record not found.")
 
