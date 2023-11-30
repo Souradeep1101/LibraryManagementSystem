@@ -10,7 +10,7 @@ def main():
     Presents the user with a choice between a Command-Line Interface (CLI) and
     a Graphical User Interface (GUI), and launches the selected interface.
     """
-    print("Welcome to the Library Management System")
+    print("\nWelcome to the Library Management System | Developed by Souradeep Banerjee 💗\n")
     print("Choose the interface you would like to use:")
     print("1. Command-Line Interface (CLI)")
     print("2. Graphical User Interface (GUI)")

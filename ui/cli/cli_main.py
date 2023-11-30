@@ -218,7 +218,7 @@ def main():
     """The main loop of the CLI, presenting the user with different actions to choose from."""
 
     while True:
-        print("\nLibrary Management System CLI")
+        print("\nLibrary Management System CLI | Developed by Souradeep Banerjee 💗\n")
         print("1. Add Book")
         print("2. Update Book Info")
         print("3. Register User")
