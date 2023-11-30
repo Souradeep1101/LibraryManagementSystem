@@ -18,6 +18,10 @@ from use_cases.return_book_use_case import ReturnBookUseCase
 from use_cases.delete_user_use_case import DeleteUserUseCase
 from use_cases.delete_book_use_case import DeleteBookUseCase
 from use_cases.delete_loan_use_case import DeleteLoanUseCase
+from use_cases.search_loan_use_case import SearchLoanUseCase
+from use_cases.search_book_use_case import SearchBookUseCase
+from use_cases.search_user_use_case import SearchUserUseCase
+from use_cases.show_database_tables_use_case import ShowDatabaseTablesUseCase
 
 # Establishing a connection to the database
 db_connection = create_db_connection()
@@ -37,19 +41,20 @@ return_book_use_case = ReturnBookUseCase(loan_repository)
 delete_book_use_case = DeleteBookUseCase(book_repository, loan_repository)
 delete_user_use_case = DeleteUserUseCase(user_repository, loan_repository)
 delete_loan_use_case = DeleteLoanUseCase(loan_repository)
+search_loan_use_case = SearchLoanUseCase(loan_repository)
+search_user_use_case = SearchUserUseCase(user_repository)
+search_book_use_case = SearchBookUseCase(book_repository)
+show_books_table_use_case = ShowDatabaseTablesUseCase(book_repository)
+show_users_table_use_case = ShowDatabaseTablesUseCase(user_repository)
+show_loans_table_use_case = ShowDatabaseTablesUseCase(loan_repository)
 
 # Initializing controllers with the respective use cases
-book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case)
-user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case)
-loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case)
-
-
-def fetch_data(query):
-    """Execute a query and return the results."""
-    cursor = db_connection.cursor()
-    cursor.execute(query)
-    result = cursor.fetchall()
-    return result
+book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case,
+                                 search_book_use_case, show_books_table_use_case)
+user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case,
+                                 search_user_use_case, show_users_table_use_case)
+loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case, search_loan_use_case,
+                                 show_loans_table_use_case)
 
 
 def display_table_data(data, headers):
@@ -59,13 +64,18 @@ def display_table_data(data, headers):
 
 def fetch_and_display_table_data(table_name):
     """Fetch data from a specific table and display it."""
-    query = f"SELECT * FROM {table_name}"
-    cursor = db_connection.cursor()
-    cursor.execute(query)
-    data = cursor.fetchall()
-    headers = [i[0] for i in cursor.description]  # This fetches the column headers
+    if table_name == 'books':
+        data = book_controller.get_books(fetchone=False)
+    elif table_name == 'users':
+        data = user_controller.get_users(fetchone=False)
+    elif table_name == 'loans':
+        data = loan_controller.get_loans(fetchone=False)
+    else:
+        raise Exception("Error: Couldn't retrieve table. 'table_name' not entered correctly.")
+    headers = data['headers']  # This fetches the column headers
+    content = data['content']  # This fetches the content of the table
     print(f"\n{table_name.title()} Data:")
-    display_table_data(data, headers)
+    display_table_data(content, headers)
 
 
 # Functionality to add, update, register, borrow, and return books along with viewing database tables
@@ -134,6 +144,76 @@ def delete_book():
     print(book_controller.delete_book(book_id))
 
 
+def search_book():
+    """
+    Prompt the user for the book ID or book Title and search the specified book.
+    """
+    print('Search book with: ')
+    print('1. Book ID')
+    print('2. Book Title')
+    choice = input("Enter your choice: ")
+    if choice == '1':
+        book_id = int(input("Enter book ID to search: "))
+        book = book_controller.search_book('book_id', book_id, fetchone=False)
+    elif choice == '2':
+        book_title = input("Enter book Title to search: ")
+        book = book_controller.search_book('title', book_title, fetchone=False)
+    else:
+        print('Invalid Choice! Please Try again!')
+        return
+    headers = book['headers']
+    content = book['content']
+    display_table_data(content, headers)
+
+
+def search_user():
+    """
+    Prompt the user for the user ID or username and search the specified book.
+    """
+    print('Search user with: ')
+    print('1. User ID')
+    print('2. User Name')
+    choice = input("Enter your choice: ")
+    if choice == '1':
+        user_id = int(input("Enter user ID to search: "))
+        user = user_controller.search_user('user_id', user_id, fetchone=False)
+    elif choice == '2':
+        user_name = input("Enter user Name to search: ")
+        user = user_controller.search_user('name', user_name, fetchone=False)
+    else:
+        print('Invalid Choice! Please Try again!')
+        return
+    headers = user['headers']
+    content = user['content']
+    display_table_data(content, headers)
+
+
+def search_loan():
+    """
+    Prompt the user for the user ID or username and search the specified book.
+    """
+    print('Search loan with: ')
+    print('1. Loan ID')
+    print('2. User ID')
+    print('3. Book ID')
+    choice = input("Enter your choice: ")
+    if choice == '1':
+        loan_id = int(input("Enter loan ID to search: "))
+        loan = loan_controller.search_loan('loan_id', loan_id, fetchone=False)
+    elif choice == '2':
+        user_id = int(input("Enter user ID to search: "))
+        loan = loan_controller.search_loan('user_id', user_id, fetchone=False)
+    elif choice == '3':
+        book_id = int(input("Enter book ID to search: "))
+        loan = loan_controller.search_loan('book_id', book_id, fetchone=False)
+    else:
+        print('Invalid Choice! Please Try again!')
+        return
+    headers = loan['headers']
+    content = loan['content']
+    display_table_data(content, headers)
+
+
 def main():
     """The main loop of the CLI, presenting the user with different actions to choose from."""
 
@@ -148,6 +228,9 @@ def main():
         print("7. Delete User")
         print("8. Delete Loan")
         print("9. Delete Book")
+        print("10. Search User")
+        print("11. Search Loan")
+        print("12. Search Book")
         print("0. Exit")
         choice = input("Enter choice: ")
 
@@ -173,6 +256,12 @@ def main():
                 delete_loan()
             elif choice == "9":
                 delete_book()
+            elif choice == "10":
+                search_user()
+            elif choice == "11":
+                search_loan()
+            elif choice == "12":
+                search_book()
             elif choice == "0":
                 # Exiting the system
                 print("Exiting the system.")

@@ -22,8 +22,8 @@ class LoanRepository:
         Parameters:
             book_id (int): The unique identifier of the book being loaned.
             user_id (int): The unique identifier of the user who is borrowing the book.
-            loan_date (datetime): The date when the book is loaned out.
-            due_date (datetime): The due date for returning the book.
+            loan_date (str): The date when the book is loaned out.
+            due_date (str): The due date for returning the book.
         """
         query = """
                 INSERT INTO loans (book_id, user_id, loan_date, due_date) 
@@ -42,15 +42,15 @@ class LoanRepository:
 
     def get_loans_by_id(self, id_field_name, id_value, fetchone=True):
         """
-        Retrieves a loan record from the database by its ID.
+        Retrieves loan record(s) from the database by its ID.
 
         Parameters:
             id_field_name (str): The column/field name of the id.
-            id_value (int): The unique identifier of the column/field.
+            id_value (str or int): The unique identifier of the column/field.
             fetchone (bool): Check if the user needs only one loan.
 
         Returns:
-            A loan record from the database.
+            Loan record(s) from the database.
         """
         query = f"SELECT * FROM loans WHERE {id_field_name} = %s"
         args = (id_value,)
@@ -58,11 +58,36 @@ class LoanRepository:
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, args)
+            headers = [i[0] for i in cursor.description]
             if fetchone:
                 loan = cursor.fetchone()
             else:
                 loan = cursor.fetchall()
-            return loan
+            return {'content': loan, 'headers': headers}
+        except Error as e:
+            print(f"Error: '{e}'")
+
+    def get_loans(self, fetchone=True):
+        """
+        Retrieves all loan record(s) from the database.
+
+        Parameters:
+            fetchone (bool): Check if the user needs only one loan.
+
+        Returns:
+            Loan record(s) with their headers from the database.
+        """
+        query = f"SELECT * FROM loans"
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            headers = [i[0] for i in cursor.description]
+            if fetchone:
+                loans = cursor.fetchone()
+            else:
+                loans = cursor.fetchall()
+            return {'content': loans, 'headers': headers}
         except Error as e:
             print(f"Error: '{e}'")
 
@@ -74,9 +99,9 @@ class LoanRepository:
             loan_id (int): The unique identifier of the loan to be updated.
             book_id (int): The updated unique identifier of the book.
             user_id (int): The updated unique identifier of the user.
-            loan_date (datetime): The updated loan date.
-            due_date (datetime): The updated due date.
-            return_date (datetime): The date when the book was returned.
+            loan_date (str): The updated loan date.
+            due_date (str): The updated due date.
+            return_date (str): The date when the book was returned.
         """
         query = """
                 UPDATE loans 

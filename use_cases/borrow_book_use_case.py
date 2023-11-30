@@ -21,11 +21,11 @@ class BorrowBookUseCase:
         Parameters:
             book_id (int): The ID of the book to be borrowed.
             user_id (int): The ID of the user borrowing the book.
-            loan_date (datetime): The date when the book is borrowed.
-            due_date (datetime): The due date for returning the book.
+            loan_date (str): The date when the book is borrowed.
+            due_date (str): The due date for returning the book.
         """
         try:
-            book = self.book_repository.get_book_by_id(book_id)
+            book = self.book_repository.get_books_by_id('book_id', book_id)
             if not book:
                 raise Exception("Book not found.")
 

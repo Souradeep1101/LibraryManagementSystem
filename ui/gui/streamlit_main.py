@@ -1,3 +1,4 @@
+import sys
 import streamlit as st
 # Importing database connection and controllers for handling business logic
 from frameworks_and_drivers.database.database_connector import create_db_connection
@@ -17,6 +18,10 @@ from use_cases.return_book_use_case import ReturnBookUseCase
 from use_cases.delete_user_use_case import DeleteUserUseCase
 from use_cases.delete_book_use_case import DeleteBookUseCase
 from use_cases.delete_loan_use_case import DeleteLoanUseCase
+from use_cases.search_loan_use_case import SearchLoanUseCase
+from use_cases.search_book_use_case import SearchBookUseCase
+from use_cases.search_user_use_case import SearchUserUseCase
+from use_cases.show_database_tables_use_case import ShowDatabaseTablesUseCase
 
 # Establishing a connection to the database
 db_connection = create_db_connection()
@@ -36,27 +41,34 @@ return_book_use_case = ReturnBookUseCase(loan_repository)
 delete_book_use_case = DeleteBookUseCase(book_repository, loan_repository)
 delete_user_use_case = DeleteUserUseCase(user_repository, loan_repository)
 delete_loan_use_case = DeleteLoanUseCase(loan_repository)
+search_loan_use_case = SearchLoanUseCase(loan_repository)
+search_user_use_case = SearchUserUseCase(user_repository)
+search_book_use_case = SearchBookUseCase(book_repository)
+show_books_table_use_case = ShowDatabaseTablesUseCase(book_repository)
+show_users_table_use_case = ShowDatabaseTablesUseCase(user_repository)
+show_loans_table_use_case = ShowDatabaseTablesUseCase(loan_repository)
 
 # Initializing controllers with the respective use cases
-book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case)
-user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case)
-loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case)
+book_controller = BookController(add_book_use_case, update_book_info_use_case, delete_book_use_case,
+                                 search_book_use_case, show_books_table_use_case)
+user_controller = UserController(user_registration_use_case, update_user_info_use_case, delete_user_use_case,
+                                 search_user_use_case, show_users_table_use_case)
+loan_controller = LoanController(borrow_book_use_case, return_book_use_case, delete_loan_use_case, search_loan_use_case,
+                                 show_loans_table_use_case)
 
 
-def fetch_data(query):
+def tuples_to_dicts(tuples, headers):
     """
-    Fetches data from the database based on the provided SQL query.
+    Converts a list of tuples into a list of dictionaries based on provided headers.
 
     Parameters:
-        query (str): SQL query to execute.
+        tuples (list of tuples): The data returned from the database.
+        headers (list of str): The column headers for the data.
 
     Returns:
-        list: List of dictionaries where each dictionary represents a row of data.
+        list of dicts: Converted list of dictionaries.
     """
-    cursor = db_connection.cursor(dictionary=True)
-    cursor.execute(query)
-    result = cursor.fetchall()
-    return result
+    return [dict(zip(headers, row)) for row in tuples]
 
 
 def get_table_data(table_name):
@@ -69,11 +81,23 @@ def get_table_data(table_name):
     Returns:
         list: List of dictionaries where each dictionary represents a row of data.
     """
-    return fetch_data(f"SELECT * FROM {table_name}")
+    if table_name == 'books':
+        data = book_controller.get_books(fetchone=False)
+    elif table_name == 'users':
+        data = user_controller.get_users(fetchone=False)
+    elif table_name == 'loans':
+        data = loan_controller.get_loans(fetchone=False)
+    else:
+        raise Exception("Error: Couldn't retrieve table. 'table_name' not entered correctly.")
+    headers = data['headers']  # This fetches the column headers
+    content = data['content']  # This fetches the content of the table
+    if content:
+        return tuples_to_dicts(content, headers)
+    else:
+        return [dict(zip(headers, [None] * len(headers)))]
 
 
-# Definition of form functions (add_book_form, update_book_form, register_user_form, borrow_book_form,
-# return_book_form) remain unchanged.
+# Definition of form functions
 
 def add_book_form():
     with st.form("Add Book"):
@@ -179,15 +203,133 @@ def delete_book_form():
             st.success(result)
 
 
+def search_book_form():
+    """
+    Prompt the user for the book ID or book Title and search the specified book.
+    """
+    # Ensure the session state key exists
+    if 'search_key' not in st.session_state:
+        st.session_state['search_key'] = 'book_id'
+
+    search_type = st.radio("Search book by", ["Book ID", "Book Title"])
+
+    # Update the session state key based on the search type
+    if search_type == "Book ID":
+        search_key = 'book_id'
+    else:
+        search_key = 'title'
+
+    # Update the session state
+    st.session_state['search_key'] = search_key
+
+    with st.form("Search Book"):
+        # Conditional input fields based on the radio selection
+        if search_type == "Book ID":
+            book_id = st.number_input("Enter Book ID", min_value=1, step=1, key=search_key)
+        else:
+            book_title = st.text_input("Enter Book Title", key=search_key)
+
+        submit_button = st.form_submit_button("Search Book")
+
+        if submit_button:
+            if search_type == "Book ID":
+                book = book_controller.search_book(search_key, book_id, fetchone=False)
+            else:
+                book = book_controller.search_book(search_key, book_title, fetchone=False)
+
+            if book['content']:
+                headers = book['headers']  # This fetches the column headers
+                content = book['content']  # This fetches the content of the table
+                st.dataframe(tuples_to_dicts(content, headers))
+            else:
+                st.write("No results found.")
+
+
+def search_user_form():
+    """
+    Create a form in Streamlit to search for a user by either their ID or name.
+    """
+    # Ensure the session state key exists
+    if 'search_user_key' not in st.session_state:
+        st.session_state['search_user_key'] = 'user_id'
+
+    search_type = st.radio("Search user by", ["User ID", "User Name"], key='search_user_radio')
+
+    # Update the session state key based on the search type
+    search_key = 'user_id' if search_type == "User ID" else 'name'
+
+    # Update the session state
+    st.session_state['search_user_key'] = search_key
+
+    with st.form("Search User"):
+        # Conditional input fields based on the radio selection
+        user_input = st.number_input("Enter User ID", min_value=1, step=1, key=search_key) \
+            if search_type == "User ID" else \
+            st.text_input("Enter User Name", key=search_key)
+
+        submit_button = st.form_submit_button("Search User")
+
+        if submit_button:
+            user = user_controller.search_user(search_key, user_input, fetchone=False)
+
+            if user['content']:
+                headers = user['headers']  # This fetches the column headers
+                content = user['content']  # This fetches the content of the table
+                st.dataframe(tuples_to_dicts(content, headers))
+            else:
+                st.write("No results found.")
+
+
+def search_loan_form():
+    """
+    Create a form in Streamlit to search for a loan by loan ID, user ID, or book ID.
+    """
+    # Ensure the session state key exists
+    if 'search_loan_key' not in st.session_state:
+        st.session_state['search_loan_key'] = 'loan_id'
+
+    search_type = st.radio("Search loan by", ["Loan ID", "User ID", "Book ID"], key='search_loan_radio')
+
+    # Update the session state key based on the search type
+    search_key = 'loan_id' if search_type == "Loan ID" else ('user_id' if search_type == "User ID" else 'book_id')
+
+    # Update the session state
+    st.session_state['search_loan_key'] = search_key
+
+    with st.form("Search Loan"):
+        # Conditional input fields based on the radio selection
+        if search_type == "Loan ID":
+            loan_input = st.number_input("Enter Loan ID", min_value=1, step=1, key=search_key)
+        elif search_type == "User ID":
+            loan_input = st.number_input("Enter User ID", min_value=1, step=1, key=search_key)
+        else:
+            loan_input = st.number_input("Enter Book ID", min_value=1, step=1, key=search_key)
+
+        submit_button = st.form_submit_button("Search Loan")
+
+        if submit_button:
+            loan = loan_controller.search_loan(search_key, loan_input, fetchone=False)
+
+            if loan['content']:
+                headers = loan['headers']  # This fetches the column headers
+                content = loan['content']  # This fetches the content of the table
+                st.dataframe(tuples_to_dicts(content, headers))
+            else:
+                st.write("No results found.")
+
+
 def main():
     """
         Main function to run the Streamlit application.
         Contains the navigation menu and page routing.
     """
     st.title("Library Management System")
+    st.text("Developed by Souradeep Banerjee 💗")
+    st.divider()
 
     menu = ["Home", "Add Book", "Update Book Info", "Register User", "Borrow Book", "Return Book", "Delete User",
-            "Delete Loan", "Delete Book", "Exit"]
+            "Delete Loan", "Delete Book", "Search Book",
+            "Search User", "Search Loan", "Exit"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Home":
@@ -218,9 +360,15 @@ def main():
         delete_loan_form()
     elif choice == "Delete Book":
         delete_book_form()
+    elif choice == "Search Book":
+        search_book_form()
+    elif choice == "Search User":
+        search_user_form()
+    elif choice == "Search Loan":
+        search_loan_form()
     elif choice == "Exit":
         st.write("Exiting the application.")
-        st.stop()
+        sys.exit()
 
 
 if __name__ == "__main__":

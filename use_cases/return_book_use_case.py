@@ -18,7 +18,7 @@ class ReturnBookUseCase:
 
         Parameters:
             loan_id (int): The ID of the loan record.
-            return_date (datetime): The date when the book is returned.
+            return_date (str): The date when the book is returned.
         """
         try:
             loan = self.loan_repository.get_loans_by_id('loan_id', loan_id)

@@ -39,24 +39,54 @@ class UserRepository:
             print(f"Error: '{e}'")
             self.connection.rollback()
 
-    def get_user_by_id(self, user_id):
+    def get_users_by_id(self, id_field_name, id_value, fetchone=True):
         """
-        Retrieves a user from the database by their ID.
+        Retrieves user record(s) from the database by its ID.
 
         Parameters:
-            user_id (int): The unique identifier of the user.
+            id_field_name (str): The column/field name of the id.
+            id_value (str or int): The unique identifier of the column/field.
+            fetchone (bool): Check if the user needs only one user.
 
         Returns:
-            A user record from the database.
+            User record(s) from the database.
         """
-        query = "SELECT * FROM users WHERE user_id = %s"
-        args = (user_id,)
+        query = f"SELECT * FROM users WHERE {id_field_name} = %s"
+        args = (id_value,)
 
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, args)
-            user = cursor.fetchone()
-            return user
+            headers = [i[0] for i in cursor.description]
+            if fetchone:
+                user = cursor.fetchone()
+            else:
+                user = cursor.fetchall()
+            return {'content': user, 'headers': headers}
+        except Error as e:
+            print(f"Error: '{e}'")
+
+    def get_users(self, fetchone=True):
+        """
+        Retrieves all user record(s) from the database.
+
+        Parameters:
+            fetchone (bool): Check if the user needs only one user.
+
+        Returns:
+            User record(s) with their headers from the database.
+        """
+        query = f"SELECT * FROM users"
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            headers = [i[0] for i in cursor.description]
+            if fetchone:
+                users = cursor.fetchone()
+            else:
+                users = cursor.fetchall()
+            return {'content': users, 'headers': headers}
         except Error as e:
             print(f"Error: '{e}'")
 

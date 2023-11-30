@@ -41,24 +41,54 @@ class BookRepository:
             print(f"Error: '{e}'")
             self.connection.rollback()
 
-    def get_book_by_id(self, book_id):
+    def get_books_by_id(self, id_field_name, id_value, fetchone=True):
         """
-        Retrieves a book from the database by its ID.
+        Retrieves book record(s) from the database by its ID.
 
         Parameters:
-            book_id (int): The unique identifier of the book.
+            id_field_name (str): The column/field name of the id.
+            id_value (str or int): The unique identifier of the column/field.
+            fetchone (bool): Check if the user needs only one book.
 
         Returns:
-            A book record from the database.
+            Book record(s) from the database.
         """
-        query = "SELECT * FROM books WHERE book_id = %s"
-        args = (book_id,)
+        query = f"SELECT * FROM books WHERE {id_field_name} = %s"
+        args = (id_value,)
 
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, args)
-            book = cursor.fetchone()
-            return book
+            headers = [i[0] for i in cursor.description]
+            if fetchone:
+                book = cursor.fetchone()
+            else:
+                book = cursor.fetchall()
+            return {'content': book, 'headers': headers}
+        except Error as e:
+            print(f"Error: '{e}'")
+
+    def get_books(self, fetchone=True):
+        """
+        Retrieves all book record(s) from the database.
+
+        Parameters:
+            fetchone (bool): Check if the user needs only one book.
+
+        Returns:
+            Book record(s) with their headers from the database.
+        """
+        query = f"SELECT * FROM books"
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            headers = [i[0] for i in cursor.description]
+            if fetchone:
+                books = cursor.fetchone()
+            else:
+                books = cursor.fetchall()
+            return {'content': books, 'headers': headers}
         except Error as e:
             print(f"Error: '{e}'")
 
