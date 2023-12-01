@@ -1,0 +1,48 @@
+LibraryManagementSystem/
+│
+├── entities/
+│   ├── book.py
+│   ├── loan.py
+│   └── user.py
+│
+├── frameworks_and_drivers/
+│   └── database/
+│       └── database_connector.py
+│
+├── interface_adapters/
+│   ├── controllers/
+│   │   ├── book_controller.py
+│   │   ├── loan_controller.py
+│   │   └── user_controller.py
+│   └── repositories/
+│       ├── book_repository.py
+│       ├── loan_repository.py
+│       └── user_repository.py
+│
+├── ui/
+│   ├── cli/
+│   │   └── cli_main.py
+│   └── gui/
+│       └── streamlit_main.py
+│
+├── use_cases/
+│   ├── add_new_book_use_case.py
+│   ├── borrow_book_use_case.py
+│   ├── delete_book_use_case.py
+│   ├── delete_loan_use_case.py
+│   ├── delete_user_use_case.py
+│   ├── return_book_use_case.py
+│   ├── search_book_use_case.py
+│   ├── search_loan_use_case.py
+│   ├── search_user_use_case.py
+│   ├── show_database_tables_use_case.py
+│   ├── update_book_info_use_case.py
+│   ├── update_user_info_use_case.py
+│   └── user_registration_use_case.py
+│
+├── .gitignore
+├── config.py
+├── main.py
+├── readme.md
+├── requirements.txt
+└── setup_config.py
